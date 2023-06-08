@@ -3,9 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { BrowserModule } from '@angular/platform-browser';
 
 
-import { FsDbModule } from '@firestitch/db';
 import { FsExampleModule } from '@firestitch/example';
-import { FsMessageModule, FsMessage } from '@firestitch/message';
+import { FsMessageModule } from '@firestitch/message';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -18,7 +17,6 @@ import { GetComponent } from './components';
   bootstrap: [AppComponent],
   imports: [
     BrowserModule,
-    FsDbModule.forRoot(),
     BrowserAnimationsModule,
     AppMaterialModule,
     FormsModule,
@@ -30,13 +28,6 @@ import { GetComponent } from './components';
     AppComponent,
     GetComponent,
   ],
-  // providers: [
-  //   {
-  //     provide: FS_TRANSFER_HANDLER,
-  //     useClass: TransferHandler,
-  //     deps: [ FsMessage ]
-  //   }
-  // ],
 })
 export class PlaygroundModule {
 }

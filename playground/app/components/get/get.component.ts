@@ -2,15 +2,12 @@ import {
   ChangeDetectionStrategy, ChangeDetectorRef, Component, OnDestroy, OnInit,
 } from '@angular/core';
 
-import { FsDb, RemoteConfig, eq, first, limit, mapMany, mapOne, match, sort } from '@firestitch/db';
 import { FsMessage } from '@firestitch/message';
-import { guid } from '@firestitch/common';
+import { FsCookie } from '@firestitch/cookie';
 
-import { Subject, merge, of } from 'rxjs';
-import { map, switchMap, takeUntil, tap } from 'rxjs/operators';
+import { Subject } from 'rxjs';
 
-import { BuildingStore, AccountStore, FileStore } from 'playground/app/stores';
-import { AccountData, BuildingData } from 'playground/app/data';
+import { addDays, isAfter, isBefore, subDays } from 'date-fns';
 
 
 @Component({
@@ -19,7 +16,7 @@ import { AccountData, BuildingData } from 'playground/app/data';
   styleUrls: ['./get.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GetComponent implements OnInit, OnDestroy {
+export class GetComponent implements OnDestroy {
 
   public id = '1';
   public values;
@@ -27,294 +24,86 @@ export class GetComponent implements OnInit, OnDestroy {
   private _destroy$ = new Subject();
 
   constructor(
-    private _db: FsDb,
+    private _cookie: FsCookie,
     private _message: FsMessage,
     private _cdRef: ChangeDetectorRef,
   ) {
-    const accountRemote: RemoteConfig = {
-      gets: ({ limit, offset }) =>
-        of(AccountData)
-          .pipe(
-            map((data) => {
-              return [...data].slice(offset, offset + limit);
-            }),
-            tap((_data) => {
-              console.log('Remote Gets', limit, offset);
-            }),
-          ),
-      put: (data) => of(data)
-        .pipe(
-          tap((_data) => {
-            console.log('Remote Put', _data);
-          }),
-        ),
-      post: (data) => of(data)
-        .pipe(
-          tap((_data) => {
-            console.log('Remote Post', _data);
-          }),
-        ),
-    };
 
-    const buildingRemote: RemoteConfig = {
-      gets: (query) => of(BuildingData),
-      put: (data) => of(data)
-        .pipe(
-          tap((_data) => {
-            console.log('Remote Put', _data);
-          }),
-        ),
-      post: (data) => of(data)
-        .pipe(
-          tap((_data) => {
-            console.log('Remote Post', _data);
-          }),
-        ),
-    };
+    const doc: any = document;
+    doc.cookies = [];
+    Object.defineProperty(doc, 'cookie', {
+      get() {
+        console.log('Cookie Get');
 
-    this._db
-      .register(new AccountStore({
-        remote: accountRemote,
-        indexes: [
-          { name: 'name', keyName: 'name' },
-          //{ name: 'billingAddressId', type: 'date', },
-        ],
-      }))
-      .register(new BuildingStore({ remote: buildingRemote }))
-      .register(new FileStore({
-        remote: {
-          post: (data) => of(data)
-            .pipe(
-              tap((_data) => {
-                console.log('Remote Post', _data);
-              }),
-            ),
-        },
-        storage: {
-          type: 'memory',
-        },
-      }))
-      .init()
-      .pipe(
-        switchMap(() => {
-          return this._db.startSync(5);
-        }),
-      )
-      .subscribe();
+        return doc.cookies
+          .filter((cookie) => {
+            return isAfter(cookie.expires, new Date());
+          })
+          .map((cookie) => {
+            return `${cookie.name}=${cookie.value}`;
+          })
+          .join('; ');
+      },
+      set(cookieStr) {
+        console.log('Cookie Set', cookieStr);
+
+        const cookie: {
+          name: string;
+          expires: Date;
+          path: string;
+
+        } = cookieStr.replace(/;$/,'').split(';')
+          .reduce((accum, item, index) => {
+            const values = item.split('=');
+            const name = values[0];
+            let value = values[1];
+
+            if(index === 0) {
+              return {
+                ...accum,
+                name,
+                value,
+              };
+            }
+
+            if(name === 'expires') {
+              value = new Date(value);
+            }
+
+            return {
+              ...accum,
+              [name]: value,
+            };
+          }, {});
+
+        doc.cookies =  doc.cookies
+          .filter((item) => {
+            return item.name !== cookie.name;
+          });
+
+        const expired = isBefore(cookie.expires || 0, new Date());
+
+        if(!expired) {
+          doc.cookies.push(cookie);
+        }
+      },
+    });
   }
 
-  public ngOnInit(): void {
-    this._db.ready$
-      .pipe(
-        switchMap(() =>
-          merge(
-            this._db.store(AccountStore).changes$
-              .pipe(
-                switchMap(() => this._db.store(AccountStore).gets()),
-              ),
-            this._db.store(AccountStore).gets(),
-          ),
-        ),
-        takeUntil(this._destroy$),
-      )
-      .subscribe((values) => {
-        this.setValues(values);
-      });
+  public set(name, value): void {
+    this._cookie.set(name, value, addDays(new Date(), 1), '/', null, false);
   }
 
-  public getsBilly(): void {
-    this._db.store(AccountStore)
-      .gets(
-        eq('firstName', 'Billy'),
-      )
-      .subscribe((values)=> {
-        this.setValues(values);
-      });
+  public remove(name): void {
+    this._cookie.set(name, '', null, '/', null, false);
   }
 
-  public getSortName(): void {
-    this._db.store(AccountStore)
-      .gets(
-        sort('name'),
-      )
-      .subscribe((values)=> {
-        this.setValues(values);
-      });
+  public getAll(): void {
+    this.setValues((document as any).cookies);
   }
 
-  public getSortBillingAddressId(): void {
-    this._db.store(AccountStore)
-      .gets(
-        sort('billingAddressId', 'numeric'),
-      )
-      .subscribe((values)=> {
-        this.setValues(values);
-      });
-  }
-
-  public getSortModifyDate(): void {
-    this._db.store(AccountStore)
-      .gets(
-        sort('name'),
-        sort('modifyDate','date', 'desc'),
-      )
-      .subscribe((values)=> {
-        this.setValues(values);
-      });
-  }
-
-  public count(): void {
-    this._db.store(AccountStore)
-      .count(
-        eq('firstName', 'Billy'),
-      )
-      .subscribe((values)=> {
-        this.setValues(values);
-      });
-  }
-
-  public getsMatch(): void {
-    this._db.store(AccountStore)
-      .gets(
-        match('firstName', 'b', 'i'),
-      )
-      .subscribe((values)=> {
-        this.setValues(values);
-      });
-  }
-
-  public getId(): void {
-    this._db.store(AccountStore)
-      .get(this.id)
-      .subscribe((values)=> {
-        this.setValues(values);
-      });
-  }
-
-  public put(data): void {
-    this._db.store(AccountStore)
-      .put(data)
-      .subscribe((response)=> {
-        this._message.success('Saved');
-      });
-  }
-
-  public putSusan(): void {
-    this._db.store(AccountStore)
-      .get('10')
-      .pipe(
-        switchMap((data) => {
-          data = {
-            ...data,
-            firstName: 'Susan Changed',
-            lastName: 'Wilson Changed',
-          };
-
-          return this._db.store(AccountStore)
-            .put(data);
-        }),
-      )
-      .subscribe((response)=> {
-        this._message.success('Saved');
-      });
-  }
-
-  public post(): void {
-    this._db.store(AccountStore)
-      .put({
-        id: String(Math.floor(Math.random() * 100000)),
-        firstName: 'Luke',
-        lastName: 'Skywalker',
-        buildingId: 1,
-      })
-      .subscribe(()=> {
-        this._message.success('Saved');
-      });
-  }
-
-  public filePost(): void {
-    this._db.store(FileStore)
-      .put({
-        guid: guid(),
-        file: new File([], 'filename.jpg'),
-      })
-      .subscribe(()=> {
-        this._message.success('Saved');
-      });
-  }
-
-  public deleteAll(): void {
-    this._db.store(AccountStore)
-      .clear()
-      .subscribe(()=> {
-        this._message.success('Deleted All');
-      });
-  }
-
-  public deleteFirst(): void {
-    this._db.store(AccountStore)
-      .delete(
-        first(),
-      )
-      .subscribe(()=> {
-        this._message.success('Deleted last');
-      });
-  }
-
-  public clear(): void {
-    this._db.clear()
-      .subscribe(()=> {
-        this._message.success('Cleared');
-      });
-  }
-
-  public destroy(): void {
-    this._db.destroy()
-      .subscribe(()=> {
-        this._message.success('Destroyed');
-      });
-  }
-
-  public startSync(): void {
-    this._db.startSync(5)
-      .subscribe(() => {
-        this._message.success('Started Sync');
-      });
-  }
-
-  public stopSync(): void {
-    this._db.stopSync();
-    this._message.success('Stopped Sync');
-  }
-
-  public getKeys(): void {
-    this._db.store(AccountStore)
-      .keys()
-      .subscribe((values)=> {
-        this.setValues(values);
-        this._message.success();
-      });
-  }
-
-  public gets(): void {
-    this._db.store(AccountStore)
-      .gets(
-        mapOne(this._db.store(BuildingStore), 'building', 'buildingId', 'id'),
-        mapMany(this._db.store(BuildingStore), 'buildings', 'id', 'buildingId'),
-      )
-      .subscribe((values)=> {
-        this.setValues(values);
-      });
-  }
-
-  public getsLimit(): void {
-    this._db.store(AccountStore)
-      .gets(
-        limit(2, 2),
-      )
-      .subscribe((values)=> {
-        this.setValues(values);
-      });
+  public get(): void {
+    this.setValues(this._cookie.get('foo'));
   }
 
   public ngOnDestroy(): void {

@@ -1,160 +1,42 @@
 <div class="container">
   <div class="left">
+    <h2>Set</h2>
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="set('foo', 'FOO')">
+      Set Foo
+    </a>
+
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="remove('foo')">
+      Delete Foo
+    </a>
+
+    <a 
+        mat-raised-button 
+        color="primary" 
+        (click)="set('doe', 'DOE')">
+      Set Doe
+    </a>
+
     <h2>Get</h2>
     <a 
         mat-raised-button 
         color="primary" 
-        (click)="gets()">
-      All
+        (click)="get()">
+      Get Foo
     </a>
-
+    
     <a 
         mat-raised-button 
         color="primary" 
-        (click)="getsLimit()">
-      Limit 2 Offset 2
+        (click)="getAll()">
+      Get All
     </a>
 
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="getKeys()">
-      Keys
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="getId()">
-      ID 1
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="getsBilly()">
-      Equals First Name Billy
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="getsMatch()">
-      Match 'b'
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="getSortName()">
-      Sort Name
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="getSortBillingAddressId()">
-      Sort Billing Address ID
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="getSortModifyDate()">
-      Sort Modify Date
-    </a>
-
-
-    <h2>Count</h2>
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="count()">
-      Count First Name Billy
-    </a>
-
-    <h2>Put</h2>
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="put({ id: id, firstName: 'John', lastName: 'Doe' })">
-      Account John Doe
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="put({ id: id, firstName: 'Billy', lastName: 'Bob' })">
-      Account Billy Bob
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="putSusan()">
-      Account Susan
-    </a>
-
-    <h2>Post</h2>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="post()">
-      Account Post
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="filePost()">
-      File Post
-    </a>
-
-    <h2>Delete</h2>
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="deleteAll()">
-      Account Delete All
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="deleteFirst()">
-      Delete First
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="clear()">
-      Clear
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="destroy()">
-      Destroy
-    </a>
-
-
-    <h2>Sync</h2>
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="startSync()">
-      Start Sync
-    </a>
-
-    <a 
-        mat-raised-button 
-        color="primary" 
-        (click)="stopSync()">
-      Stop Sync
-    </a>
   </div>
   <div class="right">
     <fieldset>

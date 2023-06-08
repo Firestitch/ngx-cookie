@@ -9,7 +9,7 @@ export class AppComponent {
 
   public config = environment;
 
-  public handlerCode = `import { FsDbHandler } from '@firestitch/db';
+  public handlerCode = `import { FsDbHandler } from '@firestitch/cookie';
 import { FsMessage } from '@firestitch/message';
 
 export class TransferHandler extends FsDbHandler {
@@ -28,7 +28,7 @@ export class TransferHandler extends FsDbHandler {
 }`;
 
   public moduleCode = `
-import { FS_TRANSFER_HANDLER } from '@firestitch/db';
+import { FS_TRANSFER_HANDLER } from '@firestitch/cookie';
 import { TransferHandler } from './app/handlers/transfer.handler';
 
 
