@@ -1,6 +1,6 @@
 
-import { Inject, Injectable, PLATFORM_ID } from '@angular/core';
-import { DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { Inject, Injectable } from '@angular/core';
+import { DOCUMENT } from '@angular/common';
 
 export type SameSite = 'Lax' | 'None' | 'Strict';
 
@@ -16,42 +16,18 @@ export interface CookieOptions {
   providedIn: 'root',
 })
 export class FsCookie {
-  private readonly documentIsAccessible: boolean;
 
   constructor(
-    @Inject(DOCUMENT) private document: Document,
-    // Get the `PLATFORM_ID` so we can check if we're in a browser.
-    @Inject(PLATFORM_ID) private platformId,
-  ) {
-    this.documentIsAccessible = isPlatformBrowser(this.platformId);
-  }
+    @Inject(DOCUMENT) private _document: Document,
+  ) { }
 
-  /**
-   * Get cookie Regular Expression
-   *
-   * @param name Cookie name
-   * @returns property RegExp
-   *
-   * @author: Stepan Suvorov
-   * @since: 1.0.0
-   */
-  private static getCookieRegExp(name: string): RegExp {
+  private static _getCookieRegExp(name: string): RegExp {
     const escapedName: string = name.replace(/([\[\]\{\}\(\)\|\=\;\+\?\,\.\*\^\$])/gi, '\\$1');
 
-    return new RegExp(`(?:^${  escapedName  }|;\\s*${  escapedName  })=(.*?)(?:;|$)`, 'g');
+    return new RegExp(`(?:^${escapedName}|;\\s*${escapedName})=(.*?)(?:;|$)`, 'g');
   }
 
-  /**
-   * Gets the unencoded version of an encoded component of a Uniform Resource Identifier (URI).
-   *
-   * @param encodedURIComponent A value representing an encoded URI component.
-   *
-   * @returns The unencoded version of an encoded component of a Uniform Resource Identifier (URI).
-   *
-   * @author: Stepan Suvorov
-   * @since: 1.0.0
-   */
-  private static safeDecodeURIComponent(encodedURIComponent: string): string {
+  private static _safeDecodeURIComponent(encodedURIComponent: string): string {
     try {
       return decodeURIComponent(encodedURIComponent);
     } catch {
@@ -60,173 +36,73 @@ export class FsCookie {
     }
   }
 
-  /**
-   * Return `true` if {@link Document} is accessible, otherwise return `false`
-   *
-   * @param name Cookie name
-   * @returns boolean - whether cookie with specified name exists
-   *
-   * @author: Stepan Suvorov
-   * @since: 1.0.0
-   */
-  public check(name: string): boolean {
-    if (!this.documentIsAccessible) {
-      return false;
-    }
+  public exists(name: string): boolean {
     name = encodeURIComponent(name);
-    const regExp: RegExp = FsCookie.getCookieRegExp(name);
+    const regExp: RegExp = FsCookie._getCookieRegExp(name);
 
-    return regExp.test(this.document.cookie);
+    return regExp.test(this._document.cookie);
   }
 
-  /**
-   * Get cookies by name
-   *
-   * @param name Cookie name
-   * @returns property value
-   *
-   * @author: Stepan Suvorov
-   * @since: 1.0.0
-   */
   public get(name: string): string {
-    if (this.documentIsAccessible && this.check(name)) {
+    if (this.exists(name)) {
       name = encodeURIComponent(name);
 
-      const regExp: RegExp = FsCookie.getCookieRegExp(name);
-      const result: RegExpExecArray = regExp.exec(this.document.cookie);
+      const regExp: RegExp = FsCookie._getCookieRegExp(name);
+      const result: RegExpExecArray = regExp.exec(this._document.cookie);
 
-      return result[1] ? FsCookie.safeDecodeURIComponent(result[1]) : '';
+      return result[1] ? FsCookie._safeDecodeURIComponent(result[1]) : '';
     }
 
     return '';
-
   }
 
-  /**
-   * Get all cookies in JSON format
-   *
-   * @returns all the cookies in json
-   *
-   * @author: Stepan Suvorov
-   * @since: 1.0.0
-   */
-  public getAll(): { [key: string]: string } {
-    if (!this.documentIsAccessible) {
-      return {};
-    }
-
+  public gets(): { [key: string]: string } {
     const cookies: { [key: string]: string } = {};
-    const document: any = this.document;
+    const document: any = this._document;
 
     if (document.cookie && document.cookie !== '') {
       document.cookie.split(';').forEach((currentCookie) => {
         const [cookieName, cookieValue] = currentCookie.split('=');
-        cookies[FsCookie.safeDecodeURIComponent(cookieName.replace(/^ /, ''))] = FsCookie.safeDecodeURIComponent(cookieValue);
+        cookies[FsCookie
+          ._safeDecodeURIComponent(cookieName.replace(/^ /, ''))] = FsCookie._safeDecodeURIComponent(cookieValue);
       });
     }
 
     return cookies;
   }
 
-  /**
-   * Set cookie based on provided information
-   *
-   * @param name     Cookie name
-   * @param value    Cookie value
-   * @param expires  Number of days until the cookies expires or an actual `Date`
-   * @param path     Cookie path
-   * @param domain   Cookie domain
-   * @param secure   Secure flag
-   * @param sameSite OWASP samesite token `Lax`, `None`, or `Strict`. Defaults to `Lax`
-   *
-   * @author: Stepan Suvorov
-   * @since: 1.0.0
-   */
   public set(
     name: string,
     value: string,
-    expires?: CookieOptions['expires'],
-    path?: CookieOptions['path'],
-    domain?: CookieOptions['domain'],
-    secure?: CookieOptions['secure'],
-    sameSite?: SameSite
-  ): void;
-
-  /**
-   * Set cookie based on provided information
-   *
-   * Cookie's parameters:
-   * <pre>
-   * expires  Number of days until the cookies expires or an actual `Date`
-   * path     Cookie path
-   * domain   Cookie domain
-   * secure   Secure flag
-   * sameSite OWASP samesite token `Lax`, `None`, or `Strict`. Defaults to `Lax`
-   * </pre>
-   *
-   * @param name     Cookie name
-   * @param value    Cookie value
-   * @param options  Body with cookie's params
-   *
-   * @author: Stepan Suvorov
-   * @since: 1.0.0
-   */
-  public set(name: string, value: string, options?: CookieOptions): void;
-
-  public set(
-    name: string,
-    value: string,
-    expiresOrOptions?: CookieOptions['expires'] | CookieOptions,
-    path?: CookieOptions['path'],
-    domain?: CookieOptions['domain'],
-    secure?: CookieOptions['secure'],
-    sameSite?: SameSite,
+    options?: CookieOptions,
   ): void {
-    if (!this.documentIsAccessible) {
-      return;
-    }
+    let cookieString: string = `${encodeURIComponent(name)}=${encodeURIComponent(value)};`;
 
-    if (typeof expiresOrOptions === 'number' || expiresOrOptions instanceof Date || path || domain || secure || sameSite) {
-      const optionsBody = {
-        expires: expiresOrOptions as CookieOptions['expires'],
-        path,
-        domain,
-        secure,
-        sameSite: sameSite ? sameSite : 'Lax',
-      };
-
-      this.set(name, value, optionsBody);
-
-      return;
-    }
-
-    let cookieString: string = `${encodeURIComponent(name)  }=${  encodeURIComponent(value)  };`;
-
-    const options = expiresOrOptions ? expiresOrOptions : {};
+    options = options || {};
 
     if (options.expires) {
       if (typeof options.expires === 'number') {
         const dateExpires: Date = new Date(new Date().getTime() + options.expires * 1000 * 60 * 60 * 24);
 
-        cookieString += `expires=${  dateExpires.toUTCString()  };`;
+        cookieString += `expires=${dateExpires.toUTCString()};`;
       } else {
-        cookieString += `expires=${  options.expires.toUTCString()  };`;
+        cookieString += `expires=${options.expires.toUTCString()};`;
       }
     }
 
     if (options.path) {
-      cookieString += `path=${  options.path  };`;
+      cookieString += `path=${options.path};`;
     }
 
     if (options.domain) {
-      cookieString += `domain=${  options.domain  };`;
+      cookieString += `domain=${options.domain};`;
     }
 
     if (!options.secure && options.sameSite === 'None') {
       options.secure = true;
       console.warn(
-        `[ngx-cookie-service] Cookie ${name} was forced with secure flag because sameSite=None.` +
-          'More details : https://github.com/stevermeister/ngx-cookie-service/issues/86#issuecomment-597720130',
+        `Cookie ${name} was forced with secure flag because sameSite=None.` +
+        'More details : https://github.com/stevermeister/ngx-cookie-service/issues/86#issuecomment-597720130',
       );
     }
     if (options.secure) {
@@ -237,53 +113,27 @@ export class FsCookie {
       options.sameSite = 'Lax';
     }
 
-    cookieString += `sameSite=${  options.sameSite  };`;
+    cookieString += `sameSite=${options.sameSite};`;
 
-    this.document.cookie = cookieString;
+    this._document.cookie = cookieString;
   }
 
-  /**
-   * Delete cookie by name
-   *
-   * @param name   Cookie name
-   * @param path   Cookie path
-   * @param domain Cookie domain
-   * @param secure Cookie secure flag
-   * @param sameSite Cookie sameSite flag - https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie/SameSite
-   *
-   * @author: Stepan Suvorov
-   * @since: 1.0.0
-   */
-  public delete(name: string, path?: CookieOptions['path'], domain?: CookieOptions['domain'], secure?: CookieOptions['secure'], sameSite: SameSite = 'Lax'): void {
-    if (!this.documentIsAccessible) {
-      return;
-    }
-    const expiresDate = new Date('Thu, 01 Jan 1970 00:00:01 GMT');
-    this.set(name, '', { expires: expiresDate, path, domain, secure, sameSite });
+  public delete(name: string, path?: CookieOptions['path'], options?: CookieOptions): void {
+    options = {
+      ...options,
+      expires: new Date('Thu, 01 Jan 1970 00:00:01 GMT'),
+    };
+
+    this.set(name, '', options);
   }
 
-  /**
-   * Delete all cookies
-   *
-   * @param path   Cookie path
-   * @param domain Cookie domain
-   * @param secure Is the Cookie secure
-   * @param sameSite Is the cookie same site
-   *
-   * @author: Stepan Suvorov
-   * @since: 1.0.0
-   */
-  public deleteAll(path?: CookieOptions['path'], domain?: CookieOptions['domain'], secure?: CookieOptions['secure'], sameSite: SameSite = 'Lax'): void {
-    if (!this.documentIsAccessible) {
-      return;
-    }
+  public deleteAll(path?: string, options?: CookieOptions): void {
+    const cookies: any = this.gets();
 
-    const cookies: any = this.getAll();
-
-    for (const cookieName in cookies) {
+    cookies.forEach((cookieName) => {
       if (cookies.hasOwnProperty(cookieName)) {
-        this.delete(cookieName, path, domain, secure, sameSite);
+        this.delete(cookieName, path, options);
       }
-    }
+    });
   }
 }

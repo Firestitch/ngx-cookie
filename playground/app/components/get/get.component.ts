@@ -7,7 +7,7 @@ import { FsCookie } from '@firestitch/cookie';
 
 import { Subject } from 'rxjs';
 
-import { addDays, isAfter, isBefore, subDays } from 'date-fns';
+import { addDays } from 'date-fns';
 
 
 @Component({
@@ -18,7 +18,6 @@ import { addDays, isAfter, isBefore, subDays } from 'date-fns';
 })
 export class GetComponent implements OnDestroy {
 
-  public id = '1';
   public values;
 
   private _destroy$ = new Subject();
@@ -29,77 +28,77 @@ export class GetComponent implements OnDestroy {
     private _cdRef: ChangeDetectorRef,
   ) {
 
-    const doc: any = document;
-    doc.cookies = [];
-    Object.defineProperty(doc, 'cookie', {
-      get() {
-        console.log('Cookie Get');
+    // const doc: any = document;
+    // doc.cookies = [];
+    // Object.defineProperty(doc, 'cookie', {
+    //   get() {
+    //     console.log('Cookie Get');
 
-        return doc.cookies
-          .filter((cookie) => {
-            return isAfter(cookie.expires, new Date());
-          })
-          .map((cookie) => {
-            return `${cookie.name}=${cookie.value}`;
-          })
-          .join('; ');
-      },
-      set(cookieStr) {
-        console.log('Cookie Set', cookieStr);
+    //     return doc.cookies
+    //       .filter((cookie) => {
+    //         return isAfter(cookie.expires, new Date());
+    //       })
+    //       .map((cookie) => {
+    //         return `${cookie.name}=${cookie.value}`;
+    //       })
+    //       .join('; ');
+    //   },
+    //   set(cookieStr) {
+    //     console.log('Cookie Set', cookieStr);
 
-        const cookie: {
-          name: string;
-          expires: Date;
-          path: string;
+    //     const cookie: {
+    //       name: string;
+    //       expires: Date;
+    //       path: string;
 
-        } = cookieStr.replace(/;$/,'').split(';')
-          .reduce((accum, item, index) => {
-            const values = item.split('=');
-            const name = values[0];
-            let value = values[1];
+    //     } = cookieStr.replace(/;$/, '').split(';')
+    //       .reduce((accum, item, index) => {
+    //         const values = item.split('=');
+    //         const name = values[0];
+    //         let value = values[1];
 
-            if(index === 0) {
-              return {
-                ...accum,
-                name,
-                value,
-              };
-            }
+    //         if (index === 0) {
+    //           return {
+    //             ...accum,
+    //             name,
+    //             value,
+    //           };
+    //         }
 
-            if(name === 'expires') {
-              value = new Date(value);
-            }
+    //         if (name === 'expires') {
+    //           value = new Date(value);
+    //         }
 
-            return {
-              ...accum,
-              [name]: value,
-            };
-          }, {});
+    //         return {
+    //           ...accum,
+    //           [name]: value,
+    //         };
+    //       }, {});
 
-        doc.cookies =  doc.cookies
-          .filter((item) => {
-            return item.name !== cookie.name;
-          });
+    //     doc.cookies = doc.cookies
+    //       .filter((item) => {
+    //         return item.name !== cookie.name;
+    //       });
 
-        const expired = isBefore(cookie.expires || 0, new Date());
+    //     const expired = isBefore(cookie.expires || 0, new Date());
 
-        if(!expired) {
-          doc.cookies.push(cookie);
-        }
-      },
-    });
+    //     if (!expired) {
+    //       doc.cookies.push(cookie);
+    //     }
+    //   },
+    // });
   }
 
   public set(name, value): void {
-    this._cookie.set(name, value, addDays(new Date(), 1), '/', null, false);
+    this._cookie.set(name, value, { expires: addDays(new Date(), 1) });
   }
 
   public remove(name): void {
-    this._cookie.set(name, '', null, '/', null, false);
+    this._cookie.delete(name);
   }
 
-  public getAll(): void {
-    this.setValues((document as any).cookies);
+  public gets(): void {
+    this.values = this._cookie.gets();
   }
 
   public get(): void {
