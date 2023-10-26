@@ -93,7 +93,12 @@ export class GetComponent implements OnDestroy {
     this._cookie.set(name, value, { expires: addDays(new Date(), 1) });
   }
 
-  public remove(name): void {
+  public remove(name?): void {
+    if (!name) {
+      this._cookie.deleteAll();
+
+      return;
+    }
     this._cookie.delete(name);
   }
 

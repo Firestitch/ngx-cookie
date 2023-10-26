@@ -130,10 +130,12 @@ export class FsCookie {
   public deleteAll(path?: string, options?: CookieOptions): void {
     const cookies: any = this.gets();
 
-    cookies.forEach((cookieName) => {
-      if (cookies.hasOwnProperty(cookieName)) {
-        this.delete(cookieName, path, options);
-      }
-    });
+    Object
+      .keys(cookies)
+      .forEach((cookieName) => {
+        if (cookies.hasOwnProperty(cookieName)) {
+          this.delete(cookieName, path, options);
+        }
+      });
   }
 }
