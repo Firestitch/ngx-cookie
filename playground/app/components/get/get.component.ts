@@ -8,13 +8,17 @@ import { FsCookie } from '@firestitch/cookie';
 import { Subject } from 'rxjs';
 
 import { addDays } from 'date-fns';
+import { MatAnchor } from '@angular/material/button';
+import { JsonPipe } from '@angular/common';
 
 
 @Component({
-  selector: 'app-get',
-  templateUrl: './get.component.html',
-  styleUrls: ['./get.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
+    selector: 'app-get',
+    templateUrl: './get.component.html',
+    styleUrls: ['./get.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [MatAnchor, JsonPipe],
 })
 export class GetComponent implements OnDestroy {
 
