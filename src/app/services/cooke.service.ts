@@ -1,5 +1,5 @@
 
-import { Inject, Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 
 export type SameSite = 'Lax' | 'None' | 'Strict';
@@ -16,10 +16,8 @@ export interface CookieOptions {
   providedIn: 'root',
 })
 export class FsCookie {
+  private _document = inject<Document>(DOCUMENT);
 
-  constructor(
-    @Inject(DOCUMENT) private _document: Document,
-  ) { }
 
   private static _getCookieRegExp(name: string): RegExp {
     const escapedName: string = name.replace(/([\[\]\{\}\(\)\|\=\;\+\?\,\.\*\^\$])/gi, '\\$1');
